@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><base href="https://websim.io/pdf-editor/">
+<html><head><base href="https://websim.io/pdf-editor/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HMH Easy PDF Editor</title>
@@ -1570,19 +1570,19 @@
             
             await page.render(renderContext).promise;
             
-            const rotateButton = document.createElement('button');
-            rotateButton.className = 'button rotate-button';
+            const insertButton = document.createElement('button');
+            insertButton.className = 'insert-button';
             const icon = document.createElement('i');
-            icon.className = 'fas fa-sync';
-            rotateButton.appendChild(icon);
-            rotateButton.onclick = () => selectPDFToInsert(pageNum);
+            icon.className = 'fas fa-plus';
+            insertButton.appendChild(icon);
+            insertButton.onclick = () => selectPDFToInsert(pageNum);
             
             const pageLabel = document.createElement('div');
             pageLabel.className = 'page-number';
             pageLabel.textContent = `Page ${pageNum}`;
             
             pageDiv.appendChild(canvas);
-            pageDiv.appendChild(rotateButton);
+            pageDiv.appendChild(insertButton);
             pageDiv.appendChild(pageLabel);
             thumbnailContainer.appendChild(pageDiv);
           }
