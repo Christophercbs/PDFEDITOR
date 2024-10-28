@@ -1,0 +1,443 @@
+<!DOCTYPE html><html><head><base href="https://websim.ai/text-to-speech/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebSim Text-to-Speech Synthesizer with Acronym Expansion</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  .container {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    padding: 20px;
+    width: 80%;
+    max-width: 800px;
+    overflow: hidden;
+  }
+  h1 {
+    text-align: center;
+    margin: 0 0 30px;
+  }
+  .title-background {
+    background-color: #0092BC;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    backdrop-filter: blur(10px);
+    width: calc(100% - 40px);
+    justify-content: center;
+    margin: 0 auto 10px;
+    position: relative;
+    transform: none;
+  }
+
+  .pdf-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border-radius: 50px;
+    padding: 20px 32px;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    text-align: center;
+    line-height: 1.2;
+    min-height: 60px;
+    background-color: #E3303D;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+
+  .button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.15);
+    background-color: #0092BC;
+  }
+
+  #add-pdf-btn, #convert-text-btn, #speak-btn, #pause-resume-btn, #reset-app-btn, #back-btn {
+    background-color: #E3303D;
+    border: none;
+    color: white;
+    padding: 20px 32px;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+  }
+
+  .button-disabled {
+    background-color: #888888 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+  }
+
+  .button-disabled:hover {
+    transform: none !important;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important;
+    background-color: #888888 !important;
+  }
+
+  #reset-app-btn {
+    background-color: #888888;
+  }
+
+  #add-pdf-btn:hover, #convert-text-btn:hover, #speak-btn:hover, #pause-resume-btn:hover, #reset-app-btn:hover, #back-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.15);
+    background-color: #0092BC;
+  }
+
+  textarea {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: calc(100% - 2rem);
+    height: 150px;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border: 2px solid #eee;
+    border-radius: 15px;
+    resize: vertical;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: #ff4757;
+  }
+  .controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  select {
+    padding: 0.8rem;
+    border: 2px solid #eee;
+    border-radius: 50px;
+    background-color: white;
+    color: #2c3e50;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    min-width: 200px;
+  }
+  select:focus {
+    outline: none;
+    border-color: #ff4757;
+  }
+  .wave-container {
+    width: 100%;
+    height: 60px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+    margin: 0 auto;
+  }
+  .wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, #4a90e2, #357abd);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+  }
+  .wave.speaking {
+    animation: waveAnimation 1s ease-in-out infinite;
+  }
+  @keyframes waveAnimation {
+    0%, 100% { transform: translateY(60%); }
+    50% { transform: translateY(30%); }
+  }
+  .acronym-info {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 1rem;
+    text-align: center;
+  }
+  .file-info {
+    margin: 10px 0;
+    color: #666;
+    font-size: 0.9em;
+    padding: 0 10px;
+    text-align: center;
+  }
+  #pdf-file {
+    display: none;
+  }
+
+  #back-btn {
+    background-color: #706F6F;
+    border: none;
+    color: white;
+    padding: 20px 32px;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+  }
+
+  #back-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.15);
+    background-color: #0092BC;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      <span class="title-background">
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="margin-right: 10px; vertical-align: middle;">
+    <path fill="currentColor" d="M14.667 0v2.747c3.853 1.146 6.666 4.72 6.666 8.946 0 4.227-2.813 7.787-6.666 8.934v2.76C20 22.173 24 17.4 24 11.693 24 5.987 20 1.213 14.667 0zM18 11.693c0-2.36-1.333-4.386-3.333-5.373v10.707c2-.947 3.333-2.987 3.333-5.334zm-18-4v8h5.333L12 22.36V1.027L5.333 7.693H0z">
+</path>
+  </svg>
+  Spoken PDF
+</span>
+    </h1>
+    <div class="pdf-controls">
+      <input type="file" id="pdf-file" accept=".pdf">
+      <button id="add-pdf-btn">Add PDF</button>
+      <button id="convert-text-btn">Convert Text</button>
+      <button id="speak-btn">Speak</button>
+      <button id="pause-resume-btn">Pause</button>
+      <button id="back-btn" style="background-color: #706F6F;" onclick="window.location.href='https://www.google.com'">Back</button>
+      <button id="reset-app-btn" style="background-color: #706F6F;">Reset App</button>
+    </div>
+    <div class="file-info"></div>
+    <textarea id="text-input" placeholder="Enter text to be spoken..."></textarea>
+    <div class="controls">
+      <select id="voice-select">
+        <option value="">Select a voice</option>
+      </select>
+    </div>
+    <div class="wave-container">
+      <div class="wave" id="wave"></div>
+    </div>
+    <p class="acronym-info"></p>
+  </div>
+
+  <script>
+    const textInput = document.getElementById('text-input');
+    const voiceSelect = document.getElementById('voice-select');
+    const speakBtn = document.getElementById('speak-btn');
+    const pauseResumeBtn = document.getElementById('pause-resume-btn');
+    const wave = document.getElementById('wave');
+    const resetAppBtn = document.getElementById('reset-app-btn');
+
+    let voices = [];
+    let currentUtterance = null;
+    let isPaused = false;
+
+    const acronymMap = {
+      'ngl': 'not gonna lie',
+      'omg': 'oh my god'
+    };
+
+    function loadGoogleVoices() {
+      const googleVoices = [
+        { name: 'Google US English', lang: 'en-US' },
+        { name: 'Google UK English Female', lang: 'en-GB' },
+        { name: 'Google UK English Male', lang: 'en-GB' },
+        { name: 'Google español', lang: 'es-ES' },
+        { name: 'Google español de Estados Unidos', lang: 'es-US' },
+        { name: 'Google français', lang: 'fr-FR' },
+        { name: 'Google Deutsch', lang: 'de-DE' },
+        { name: 'Google italiano', lang: 'it-IT' },
+        { name: 'Google 日本語', lang: 'ja-JP' },
+        { name: 'Google 한국의', lang: 'ko-KR' },
+        { name: 'Google Nederlands', lang: 'nl-NL' },
+        { name: 'Google português do Brasil', lang: 'pt-BR' },
+        { name: 'Google русский', lang: 'ru-RU' },
+        { name: 'Google 普通话（中国大陆）', lang: 'zh-CN' },
+        { name: 'Google 粤語（香港）', lang: 'zh-HK' },
+        { name: 'Google norsk', lang: 'nb-NO' },
+        { name: 'Google हिन्दी', lang: 'hi-IN' },
+        { name: 'Google dansk', lang: 'da-DK' },
+        { name: 'Google suomi', lang: 'fi-FI' },
+        { name: 'Google Bahasa Indonesia', lang: 'id-ID' },
+        { name: 'Google polski', lang: 'pl-PL' },
+        { name: 'Microsoft David - English (United States)', lang: 'en-US' },
+        { name: 'Microsoft Mark - English (United States)', lang: 'en-US' },
+        { name: 'Microsoft Zira - English (United States)', lang: 'en-US' },
+        { name: 'Microsoft George - English (United Kingdom)', lang: 'en-GB' },
+        { name: 'Microsoft Hazel - English (United Kingdom)', lang: 'en-GB' },
+        { name: 'Microsoft Catherine - English (Australia)', lang: 'en-AU' },
+        { name: 'Microsoft James - English (Australia)', lang: 'en-AU' },
+        { name: 'Microsoft Linda - English (Canada)', lang: 'en-CA' },
+        { name: 'Microsoft Richard - English (Canada)', lang: 'en-CA' },
+        { name: 'Microsoft Pablo - Spanish (Spain)', lang: 'es-ES' },
+        { name: 'Microsoft Helena - Spanish (Mexico)', lang: 'es-MX' },
+        { name: 'Microsoft Claude - French (France)', lang: 'fr-FR' },
+        { name: 'Microsoft Julie - French (France)', lang: 'fr-FR' }
+      ];
+
+      return googleVoices;
+    }
+
+    function populateVoiceList() {
+      voices = speechSynthesis.getVoices();
+      const googleVoices = loadGoogleVoices();
+      voiceSelect.innerHTML = '';
+
+      voices.forEach((voice, index) => {
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        option.setAttribute('data-lang', voice.lang);
+        option.setAttribute('data-name', voice.name);
+        voiceSelect.appendChild(option);
+      });
+
+      googleVoices.forEach(gVoice => {
+        if (!voices.some(v => v.name === gVoice.name)) {
+          const option = document.createElement('option');
+          option.textContent = `${gVoice.name} (${gVoice.lang})`;
+          option.setAttribute('data-lang', gVoice.lang);
+          option.setAttribute('data-name', gVoice.name);
+          voiceSelect.appendChild(option);
+        }
+      });
+    }
+
+    populateVoiceList();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = populateVoiceList;
+    }
+
+    function expandAcronyms(text) {
+      return text.replace(/\b(ngl|omg)\b/gi, match => {
+        const lowerMatch = match.toLowerCase();
+        return acronymMap[lowerMatch] || match;
+      });
+    }
+
+    speakBtn.addEventListener('click', () => {
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+      }
+
+      let text = textInput.value;
+      text = expandAcronyms(text);
+      
+      currentUtterance = new SpeechSynthesisUtterance(text);
+      const selectedOption = voiceSelect.selectedOptions[0].getAttribute('data-name');
+      const selectedVoice = voices.find(voice => voice.name === selectedOption);
+      
+      if (selectedVoice) {
+        currentUtterance.voice = selectedVoice;
+      }
+
+      wave.classList.add('speaking');
+      speechSynthesis.speak(currentUtterance);
+
+      currentUtterance.onend = () => {
+        wave.classList.remove('speaking');
+        isPaused = false;
+        pauseResumeBtn.textContent = 'Pause/Resume';
+      };
+    });
+
+    pauseResumeBtn.addEventListener('click', () => {
+      if (!speechSynthesis.speaking) return;
+
+      if (isPaused) {
+        speechSynthesis.resume();
+        wave.classList.add('speaking');
+        pauseResumeBtn.textContent = 'Pause';
+      } else {
+        speechSynthesis.pause();
+        wave.classList.remove('speaking');
+        pauseResumeBtn.textContent = 'Resume';
+      }
+      isPaused = !isPaused;
+    });
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+    
+    const pdfFile = document.getElementById('pdf-file');
+    const addPdfBtn = document.getElementById('add-pdf-btn');
+    const convertTextBtn = document.getElementById('convert-text-btn');
+    let pdfDocument = null;
+
+    addPdfBtn.addEventListener('click', () => {
+      pdfFile.click();
+    });
+
+    pdfFile.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file && file.type === 'application/pdf') {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          const typedarray = new Uint8Array(e.target.result);
+          try {
+            pdfDocument = await pdfjsLib.getDocument(typedarray).promise;
+            let fileInfo = document.createElement('div');
+            fileInfo.className = 'file-info';
+            fileInfo.textContent = `Loaded file: ${file.name}`;
+            const textarea = document.getElementById('text-input');
+            textarea.parentNode.insertBefore(fileInfo, textarea);
+            
+            addPdfBtn.classList.add('button-disabled');
+            addPdfBtn.disabled = true;
+          } catch (error) {
+            console.error('Error loading PDF:', error);
+            alert('Error loading PDF file');
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    });
+
+    convertTextBtn.addEventListener('click', async () => {
+      if (!pdfDocument) {
+        alert('Please add a PDF file first');
+        return;
+      }
+
+      let fullText = '';
+      for (let i = 1; i <= pdfDocument.numPages; i++) {
+        const page = await pdfDocument.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+      
+      textInput.value = fullText;
+    });
+
+    resetAppBtn.addEventListener('click', () => {
+      location.reload();
+    });
+  </script>
+
+</body></html>

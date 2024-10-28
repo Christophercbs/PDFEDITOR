@@ -1,0 +1,1762 @@
+<!DOCTYPE html><html><head><base href="https://websim.io/pdf-editor/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HMH Easy PDF Editor</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  .container {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    padding: 20px;
+    width: 80%;
+    max-width: 800px;
+  }
+  .title-logo {
+    height: 21px;
+    vertical-align: middle;
+    margin-right: 10px;
+    width: 63px;
+  }
+  .title-background {
+    background-color: #0092BC;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    backdrop-filter: blur(10px);
+    width: calc(100% - 40px);
+    justify-content: center;
+    margin: 0 auto 10px;
+    position: relative;
+    transform: none;
+  }
+  .title-background:hover {
+    transform: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  h1 {
+    text-align: center;
+    margin: 0 0 30px;
+    width: 100%;
+  }
+  h2 {
+    color: #333;
+    text-align: center;
+  }
+  .title-description {
+    text-align: center;
+    color: #666;
+    margin: 0 0 20px;
+    font-size: 16px;
+  }
+  #mergePDFScreen p {
+    text-align: center;
+  }
+  #organizePDFScreen p {
+    text-align: center; 
+  }
+  .button-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 25px;
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border-radius: 50px;
+    padding: 20px 32px;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    text-align: center;
+    line-height: 1.2;
+    min-height: 60px;
+    background-color: #E3303D;
+    border: none;
+    color: white;
+  }
+  .button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.15);
+    background-color: #0092BC;
+  }
+  .button:active {
+    transform: translateY(1px);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+  }
+  .button i {
+    font-size: 20px;
+  }
+  .screen {
+    display: none;
+  }
+  .screen.active {
+    display: block;
+  }
+  .thumbnail-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  .page-thumbnail {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    width: 200px;
+  }
+  .thumbnail-canvas {
+    max-width: 100%;
+    height: auto;
+  }
+  .page-number {
+    text-align: center;
+    font-size: 14px;
+    margin-top: 5px;
+  }
+  .button[id^="backFrom"],
+  .button[id^="resetFrom"] {
+    background-color: #706F6F;
+  }
+  .insert-button {
+    position: absolute;
+    right: -15px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    padding: 2px 6px !important;
+    font-size: 12px !important;
+    min-height: auto !important;
+    margin: 5px 0 !important;
+    width: auto !important;
+    gap: 0 !important;
+  }
+  .rotate-button {
+    min-height: auto !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 8px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-top: 5px !important;
+  }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  async function handlePDFToInsert(files, afterPage) {
+    if (files.length > 0 && files[0].type === 'application/pdf') {
+      try {
+        const baseArrayBuffer = await pdfToInclude.arrayBuffer();
+        const insertArrayBuffer = await files[0].arrayBuffer();
+        const basePdf = await PDFLib.PDFDocument.load(baseArrayBuffer);
+        const insertPdf = await PDFLib.PDFDocument.load(insertArrayBuffer);
+        
+        const newPdf = await PDFLib.PDFDocument.create();
+        
+        const pagesBefore = await newPdf.copyPages(basePdf, Array.from({length: afterPage}, (_, i) => i));
+        pagesBefore.forEach(page => newPdf.addPage(page));
+        
+        const insertedPages = await newPdf.copyPages(insertPdf, insertPdf.getPageIndices());
+        insertedPages.forEach(page => newPdf.addPage(page));
+        
+        const pagesAfter = await newPdf.copyPages(basePdf, Array.from({length: basePdf.getPageCount() - afterPage}, (_, i) => i + afterPage));
+        pagesAfter.forEach(page => newPdf.addPage(page));
+        
+        const newPdfBytes = await newPdf.save();
+        const newFile = new File([newPdfBytes], 'combined.pdf', { type: 'application/pdf' });
+        pdfToInclude = newFile;
+        
+        updateIncludeFileList();
+        handlePDFToInclude([newFile]);
+        
+      } catch (error) {
+        console.error('Error inserting PDF:', error);
+        alert('An error occurred while inserting the PDF. Please try again.');
+      }
+    } else {
+      alert('Please select a PDF file.');
+    }
+  }
+
+  function selectPDFToInsert(afterPage) {
+    let input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf';
+    input.onchange = (e) => handlePDFToInsert(e.target.files, afterPage);
+    input.click();
+  }
+
+  function resetApp() {
+    uploadedFiles = [];
+    splitFile = null;
+    splitRanges = [];
+    pdfToModify = null;
+    pagesToRemove = [];
+    pdfToExtract = null;
+    pagesToExtract = [];
+    pdfToOrganize = null;
+    pageOrder = [];
+    selectedPagesForSwap = [];
+    pdfToCompress = null;
+    pdfToInclude = null;
+    includedPages = [];
+    pdfToRotate = null;
+    rotatedPages = {};
+    pdfToConvert = null;
+
+    uploadedFilesList.innerHTML = '';
+    uploadedFileElement.innerHTML = '';
+    splitRangesList.innerHTML = '';
+    pdfToModifyList.innerHTML = '';
+    removedPagesList.innerHTML = '';
+    pdfToExtractList.innerHTML = '';
+    extractPagesList.innerHTML = '';
+    pdfToOrganizeList.innerHTML = '';
+    pdfToCompressList.innerHTML = '';
+    pdfToIncludeList.innerHTML = '';
+    document.getElementById('rotateThumbnailContainer').innerHTML = '';
+    document.getElementById('pdfToRotate').innerHTML = '';
+    document.getElementById('pdfToConvert').innerHTML = '';
+    document.getElementById('convertedText').textContent = '';
+
+    startMergeBtn.disabled = true;
+    startSplitBtn.disabled = true;
+    startRemovingBtn.disabled = true;
+    startExtractingBtn.disabled = true;
+    startOrganizingBtn.disabled = true;
+    changePagePositionBtn.disabled = true;
+    extremeCompressBtn.disabled = true;
+    startIncludingBtn.disabled = true;
+    startRotatingBtn.disabled = true;
+    startConvertingBtn.disabled = true;
+
+    addPDFToRemoveBtn.disabled = false;
+    addPDFToCompressBtn.disabled = false;
+    addPDFToIncludeBtn.disabled = false;
+    addPDFToOrganizeBtn.disabled = false;
+    addPDFToRotateBtn.disabled = false;
+    addPDFToConvertBtn.disabled = false;
+
+    const screens = document.querySelectorAll('.screen');
+    screens.forEach(screen => screen.classList.remove('active'));
+    homeScreen.classList.add('active');
+  }
+
+  const homeScreenHandlers = {
+    mergePDF: {
+      buttonId: 'goToMergePDF',
+      screenId: 'mergePDFScreen',
+      init: function() {
+        const button = document.getElementById(this.buttonId);
+        const screen = document.getElementById(this.screenId);
+        if (button && screen) {
+          button.addEventListener('click', () => {
+            homeScreen.classList.remove('active');
+            screen.classList.add('active');
+          });
+        }
+      }
+    },
+    
+    splitPDF: {
+      buttonId: 'goToSplitPDF',
+      screenId: 'splitPDFScreen',
+      init: function() {
+        const button = document.getElementById(this.buttonId);
+        const screen = document.getElementById(this.screenId);
+        if (button && screen) {
+          button.addEventListener('click', () => {
+            homeScreen.classList.remove('active');
+            screen.classList.add('active');
+          });
+        }
+      }
+    },
+
+    removePDF: {
+      buttonId: 'goToRemovePDF',
+      screenId: 'removePDFScreen',
+      init: function() {
+        const button = document.getElementById(this.buttonId);
+        const screen = document.getElementById(this.screenId);
+        if (button && screen) {
+          button.addEventListener('click', () => {
+            homeScreen.classList.remove('active');
+            screen.classList.add('active');
+          });
+        }
+      }
+    },
+
+    extractPDF: {
+      buttonId: 'goToExtractPDF',
+      screenId: 'extractPDFScreen',
+      init: function() {
+        const button = document.getElementById(this.buttonId);
+        const screen = document.getElementById(this.screenId);
+        if (button && screen) {
+          button.addEventListener('click', () => {
+            homeScreen.classList.remove('active');
+            screen.classList.add('active');
+          });
+        }
+      }
+    },
+
+    organizePDF: {
+      buttonId: 'goToOrganizePDF',
+      screenId: 'organizePDFScreen',
+      init: function() {
+        const button = document.getElementById(this.buttonId);
+        const screen = document.getElementById(this.screenId);
+        if (button && screen) {
+          button.addEventListener('click', () => {
+            homeScreen.classList.remove('active');
+            screen.classList.add('active');
+          });
+        }
+      }
+    },
+
+    compressPDF: {
+      buttonId: 'goToCompressPDF',
+      screenId: 'compressPDFScreen',
+      init: function() {
+        const button = document.getElementById(this.buttonId);
+        const screen = document.getElementById(this.screenId);
+        if (button && screen) {
+          button.addEventListener('click', () => {
+            homeScreen.classList.remove('active');
+            screen.classList.add('active');
+          });
+        }
+      }
+    },
+
+    includePDF: {
+      buttonId: 'goToIncludePDF',
+      screenId: 'includePDFScreen',
+      init: function() {
+        const button = document.getElementById(this.buttonId);
+        const screen = document.getElementById(this.screenId);
+        if (button && screen) {
+          button.addEventListener('click', () => {
+            homeScreen.classList.remove('active');
+            screen.classList.add('active');
+          });
+        }
+      }
+    },
+
+    rotatePDF: {
+      buttonId: 'goToRotatePDF',
+      screenId: 'rotatePDFScreen',
+      init: function() {
+        const button = document.getElementById(this.buttonId);
+        const screen = document.getElementById(this.screenId);
+        if (button && screen) {
+          button.addEventListener('click', () => {
+            homeScreen.classList.remove('active');
+            screen.classList.add('active');
+          });
+        }
+      }
+    },
+
+    pdfToText: {
+      buttonId: 'goToPDFToText',
+      screenId: 'pdfToTextScreen',
+      init: function() {
+        const button = document.getElementById(this.buttonId);
+        const screen = document.getElementById(this.screenId);
+        if (button && screen) {
+          button.addEventListener('click', () => {
+            homeScreen.classList.remove('active');
+            screen.classList.add('active');
+          });
+        }
+      }
+    }
+  };
+
+  function initBackButtons() {
+    const backButtons = [
+      'backFromMerge',
+      'backFromSplit',
+      'backFromRemove', 
+      'backFromExtract',
+      'backFromOrganize',
+      'backFromCompress',
+      'backFromInclude',
+      'backFromRotate',
+      'backFromText'
+    ];
+
+    backButtons.forEach(id => {
+      const button = document.getElementById(id);
+      if (button) {
+        button.addEventListener('click', () => {
+          const screens = document.querySelectorAll('.screen');
+          screens.forEach(screen => screen.classList.remove('active'));
+          homeScreen.classList.add('active');
+        });
+      }
+    });
+  }
+
+  function initResetButtons() {
+    const resetButtons = [
+      'resetFromMerge',
+      'resetFromSplit', 
+      'resetFromRemove',
+      'resetFromExtract',
+      'resetFromOrganize', 
+      'resetFromCompress',
+      'resetFromInclude',
+      'resetFromRotate',
+      'resetFromText'
+    ];
+
+    resetButtons.forEach(id => {
+      const button = document.getElementById(id);
+      if (button) {
+        button.addEventListener('click', resetApp);
+      }
+    });
+  }
+
+  function initHomeScreenHandlers() {
+    const homeScreen = document.getElementById('homeScreen');
+    if (!homeScreen) {
+      console.error('Home screen element not found');
+      return;
+    }
+
+    Object.values(homeScreenHandlers).forEach(handler => {
+      try {
+        handler.init();
+      } catch (error) {
+        console.error(`Error initializing handler:`, error);
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      initHomeScreenHandlers();
+      initBackButtons();
+      initResetButtons(); 
+    }, 0);
+  });
+</script>
+</head>
+<body>
+  <div class="container">
+    <div id="homeScreen" class="screen active">
+      <h1>
+        <span class="title-background">
+          <img src="https://hmhw.com/wp-content/themes/yootheme/cache/HMH_white-resized-8d549bb4.webp" alt="HMH Logo" class="title-logo" width="63" height="21">
+          Easy PDF Editor
+        </span>
+      </h1>
+      <p class="title-description">PDF tools to make your work easier</p>
+      <div class="button-container">
+        <button class="button" id="goToMergePDF">
+          <i class="fas fa-object-group"></i>
+          Merge PDFs
+        </button>
+        <button class="button" id="goToSplitPDF">
+          <i class="fas fa-cut"></i>
+          Split PDF
+        </button>
+        <button class="button" id="goToRemovePDF">
+          <i class="fas fa-trash-alt"></i>
+          Remove Pages
+        </button>
+        <button class="button" id="goToExtractPDF">
+          <i class="fas fa-file-export"></i>
+          Extract Pages
+        </button>
+        <button class="button" id="goToOrganizePDF">
+          <i class="fas fa-sort"></i>
+          Organize PDF
+        </button>
+        <button class="button" id="goToCompressPDF">
+          <i class="fas fa-compress"></i>
+          Compress PDF
+        </button>
+        <button class="button" id="goToIncludePDF">
+          <i class="fas fa-file-import"></i>
+          Include Pages PDF
+        </button>
+        <button class="button" id="goToRotatePDF">
+          <i class="fas fa-sync"></i>
+          Rotate PDF
+        </button>
+        <button class="button" id="goToPDFToText">
+          <i class="fas fa-file-alt"></i>
+          PDF to Text
+        </button>
+        <button class="button" onclick="window.location.href='https://www.google.com'">
+  <i class="fas fa-volume-up"></i>
+  Spoken PDF
+</button>
+      </div>
+    </div>
+
+    <div id="mergePDFScreen" class="screen">
+      <h1>
+        <span class="title-background">
+          <img src="https://hmhw.com/wp-content/themes/yootheme/cache/HMH_white-resized-8d549bb4.webp" alt="HMH Logo" class="title-logo" width="63" height="21">
+          Merge PDFs
+        </span>
+      </h1>
+      <div class="button-container">
+        <button class="button" id="addMore">Add More Files</button>
+        <button class="button" id="startMerge" disabled="">Start Merging</button>
+        <button class="button" id="backFromMerge">Back</button>
+        <button class="button" id="resetFromMerge">Reset App</button>
+      </div>
+      <div id="fileList">
+        <h3>Uploaded Files:</h3>
+        <ul id="uploadedFiles"></ul>
+      </div>
+    </div>
+
+    <div id="splitPDFScreen" class="screen">
+      <h1>
+        <span class="title-background">
+          <img src="https://hmhw.com/wp-content/themes/yootheme/cache/HMH_white-resized-8d549bb4.webp" alt="HMH Logo" class="title-logo" width="63" height="21">
+          Split PDF
+        </span>
+      </h1>
+      <div class="button-container">
+        <button class="button" id="addPDF">Add PDF</button>
+        <button class="button" id="addRange">+ Add Range</button>
+        <button class="button" id="startSplit" disabled="">Start Splitting</button>
+        <button class="button" id="backFromSplit">Back</button>
+        <button class="button" id="resetFromSplit">Reset App</button>
+      </div>
+      <div id="fileList">
+        <h3>Uploaded File:</h3>
+        <ul id="uploadedFile"></ul>
+      </div>
+      <div id="rangeList">
+        <h3>Split Ranges:</h3>
+        <ul id="splitRanges"></ul>
+      </div>
+    </div>
+
+    <div id="removePDFScreen" class="screen">
+      <h1>
+        <span class="title-background">
+          <img src="https://hmhw.com/wp-content/themes/yootheme/cache/HMH_white-resized-8d549bb4.webp" alt="HMH Logo" class="title-logo" width="63" height="21">
+          Remove Pages
+        </span>
+      </h1>
+      <div class="button-container">
+        <button class="button" id="addPDFToRemove">Add PDF</button>
+        <button class="button" id="startRemoving" disabled="">Start Removing</button>
+        <button class="button" id="backFromRemove">Back</button>
+        <button class="button" id="resetFromRemove" onclick="window.location.reload()">Reset App</button>
+      </div>
+      <div id="removeFileList">
+        <h3>Uploaded File:</h3>
+        <ul id="pdfToModify"></ul>
+      </div>
+      <div id="pagesToRemoveList">
+        <h3>Pages to Remove:</h3>
+        <ul id="removePages"></ul>
+      </div>
+      <div id="thumbnailContainer" class="thumbnail-container"></div>
+    </div>
+
+    <div id="extractPDFScreen" class="screen">
+      <h1>
+        <span class="title-background">
+          <img src="https://hmhw.com/wp-content/themes/yootheme/cache/HMH_white-resized-8d549bb4.webp" alt="HMH Logo" class="title-logo" width="63" height="21">
+          Extract Pages
+        </span>
+      </h1>
+      <div class="button-container">
+        <button class="button" id="addPDFToExtract">Add PDF</button>
+        <button class="button" id="startExtracting" disabled="">Extract Selected Pages</button>
+        <button class="button" id="backFromExtract">Back</button>
+        <button class="button" id="resetFromSplit" onclick="window.location.reload()">Reset App</button>
+      </div>
+      <div id="extractFileList">
+        <h3>Uploaded File:</h3>
+        <ul id="pdfToExtract"></ul>
+      </div>
+      <div id="pagesToExtractList">
+        <h3>Pages to Extract:</h3>
+        <ul id="extractPages"></ul>
+      </div>
+      <div id="extractThumbnailContainer" class="thumbnail-container"></div>
+    </div>
+
+    <div id="organizePDFScreen" class="screen">
+      <h1>
+        <span class="title-background">
+          <img src="https://hmhw.com/wp-content/themes/yootheme/cache/HMH_white-resized-8d549bb4.webp" alt="HMH Logo" class="title-logo" width="63" height="21">
+          Organize PDF
+        </span>
+      </h1>
+      <div class="button-container">
+        <button class="button" id="addPDFToOrganize">Add PDF</button>
+        <button class="button" id="changePagePosition" disabled="">Change Page Position</button>
+        <button class="button" id="startOrganizing" disabled="">Save Organized PDF</button>
+        <button class="button" id="backFromOrganize">Back</button>
+        <button class="button" id="resetFromOrganize" onclick="window.location.reload()">Reset App</button>
+      </div>
+      <div id="organizeFileList">
+        <h3>Uploaded File:</h3>
+        <ul id="pdfToOrganize"></ul>
+      </div>
+      <div id="organizeThumbnailContainer" class="thumbnail-container"></div>
+    </div>
+
+    <div id="compressPDFScreen" class="screen">
+      <h1>
+        <span class="title-background">
+          <img src="https://hmhw.com/wp-content/themes/yootheme/cache/HMH_white-resized-8d549bb4.webp" alt="HMH Logo" class="title-logo" width="63" height="21">
+          Compress PDF
+        </span>
+      </h1>
+      <p style="text-align: center;">Use this tool to compress PDF size</p>
+      <div class="button-container">
+        <button class="button" id="addPDFToCompress">Add PDF</button>
+        <button class="button" id="extremeCompress" disabled="">Start Compression</button>
+        <button class="button" id="backFromCompress">Back</button>
+        <button class="button" id="resetFromCompress">Reset App</button>
+      </div>
+      <div id="compressFileList">
+        <h3>Uploaded File:</h3>
+        <ul id="pdfToCompress"></ul>
+      </div>
+    </div>
+
+    <div id="includePDFScreen" class="screen">
+      <h1>
+        <span class="title-background">
+          <img src="https://hmhw.com/wp-content/themes/yootheme/cache/HMH_white-resized-8d549bb4.webp" alt="HMH Logo" class="title-logo" width="63" height="21">
+          Include Pages PDF
+        </span>
+      </h1>
+      <div class="button-container">
+        <button class="button" id="addPDFToInclude">Add Base PDF</button>
+        <button class="button" id="startIncluding" disabled="">Save PDF</button>
+        <button class="button" id="backFromInclude">Back</button>
+        <button class="button" id="resetFromRemove" onclick="window.location.reload()">Reset App</button>
+      </div>
+      <div id="includeFileList">
+        <h3>Base PDF File:</h3>
+        <ul id="pdfToInclude"></ul>
+      </div>
+      <div id="includeThumbnailContainer" class="thumbnail-container"></div>
+    </div>
+
+    <div id="rotatePDFScreen" class="screen">
+      <h1>
+        <span class="title-background">
+          <img src="https://hmhw.com/wp-content/themes/yootheme/cache/HMH_white-resized-8d549bb4.webp" alt="HMH Logo" class="title-logo" width="63" height="21">
+          Rotate PDF
+        </span>
+      </h1>
+      <div class="button-container">
+        <button class="button" id="addPDFToRotate">Add PDF</button>
+        <button class="button" id="rotateAll">Rotate All</button>
+        <button class="button" id="startRotating" disabled="">Save Rotated PDF</button>
+        <button class="button" id="backFromRotate">Back</button>
+        <button class="button" id="resetFromRotate" onclick="window.location.reload()">Reset App</button>
+      </div>
+      <div id="rotateFileList">
+        <h3>Uploaded File:</h3>
+        <ul id="pdfToRotate"></ul>
+      </div>
+      <div id="rotateThumbnailContainer" class="thumbnail-container"></div>
+    </div>
+
+    <div id="pdfToTextScreen" class="screen">
+      <h1>
+        <span class="title-background">
+          <img src="https://hmhw.com/wp-content/themes/yootheme/cache/HMH_white-resized-8d549bb4.webp" alt="HMH Logo" class="title-logo" width="63" height="21">
+          PDF to Text
+        </span>
+      </h1>
+      <div class="button-container">
+        <button class="button" id="addPDFToConvert">Add PDF</button>
+        <button class="button" id="startConverting" disabled="">Convert to Text</button>
+        <button class="button" id="backFromText">Back</button>
+        <button class="button" id="resetFromText">Reset App</button>
+      </div>
+      <div id="textFileList">
+        <h3>Uploaded File:</h3>
+        <ul id="pdfToConvert"></ul>
+      </div>
+      <div id="convertedText" style="margin-top: 20px; white-space: pre-wrap;"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="https://unpkg.com/downloadjs@1.4.7/download.js"></script>
+  <script>
+    const homeScreen = document.getElementById('homeScreen');
+    const mergePDFScreen = document.getElementById('mergePDFScreen');
+    const splitPDFScreen = document.getElementById('splitPDFScreen');
+    const removePDFScreen = document.getElementById('removePDFScreen');
+    const extractPDFScreen = document.getElementById('extractPDFScreen');
+    const organizePDFScreen = document.getElementById('organizePDFScreen');
+    const compressPDFScreen = document.getElementById('compressPDFScreen');
+    const includePDFScreen = document.getElementById('includePDFScreen');
+    const rotatePDFScreen = document.getElementById('rotatePDFScreen');
+    const pdfToTextScreen = document.getElementById('pdfToTextScreen');
+    const addMoreBtn = document.getElementById('addMore');
+    const startMergeBtn = document.getElementById('startMerge');
+    const backFromMergeBtn = document.getElementById('backFromMerge');
+    const resetFromMergeBtn = document.getElementById('resetFromMerge');
+    const addPDFBtn = document.getElementById('addPDF');
+    const startSplitBtn = document.getElementById('startSplit');
+    const backFromSplitBtn = document.getElementById('backFromSplit');
+    const resetFromSplitBtn = document.getElementById('resetFromSplit');
+    const addPDFToRemoveBtn = document.getElementById('addPDFToRemove');
+    const startRemovingBtn = document.getElementById('startRemoving');
+    const backFromRemoveBtn = document.getElementById('backFromRemove');
+    const resetFromRemoveBtn = document.getElementById('resetFromRemove');
+    const addPDFToExtractBtn = document.getElementById('addPDFToExtract');
+    const startExtractingBtn = document.getElementById('startExtracting');
+    const backFromExtractBtn = document.getElementById('backFromExtract');
+    const resetFromExtractBtn = document.getElementById('resetFromExtract');
+    const addPDFToOrganizeBtn = document.getElementById('addPDFToOrganize');
+    const changePagePositionBtn = document.getElementById('changePagePosition');
+    const startOrganizingBtn = document.getElementById('startOrganizing');
+    const backFromOrganizeBtn = document.getElementById('backFromOrganize');
+    const resetFromOrganizeBtn = document.getElementById('resetFromOrganize');
+    const addPDFToCompressBtn = document.getElementById('addPDFToCompress');
+    const backFromCompressBtn = document.getElementById('backFromCompress');
+    const resetFromCompressBtn = document.getElementById('resetFromCompress');
+    const extremeCompressBtn = document.getElementById('extremeCompress');
+    const pdfToCompressList = document.getElementById('pdfToCompress');
+    const uploadedFilesList = document.getElementById('uploadedFiles');
+    const uploadedFileElement = document.getElementById('uploadedFile');
+    const splitRangesList = document.getElementById('splitRanges');
+    const pdfToModifyList = document.getElementById('pdfToModify');
+    const removedPagesList = document.getElementById('removePages');
+    const pdfToExtractList = document.getElementById('pdfToExtract');
+    const extractPagesList = document.getElementById('extractPages');
+    const pdfToOrganizeList = document.getElementById('pdfToOrganize');
+    const pdfToIncludeList = document.getElementById('pdfToInclude');
+    const addPDFToIncludeBtn = document.getElementById('addPDFToInclude');
+    const startIncludingBtn = document.getElementById('startIncluding');
+    const backFromIncludeBtn = document.getElementById('backFromInclude');
+    const resetFromIncludeBtn = document.getElementById('resetFromInclude');
+    const addPDFToRotateBtn = document.getElementById('addPDFToRotate');
+    const startRotatingBtn = document.getElementById('startRotating');
+    const backFromRotateBtn = document.getElementById('backFromRotate');
+    const resetFromRotateBtn = document.getElementById('resetFromRotate');
+    const pdfToRotateList = document.getElementById('pdfToRotate');
+    const addPDFToConvertBtn = document.getElementById('addPDFToConvert');
+    const startConvertingBtn = document.getElementById('startConverting');
+
+    let uploadedFiles = [];
+    let splitFile = null;
+    let splitRanges = [];
+    let pdfToModify = null;
+    let pagesToRemove = [];
+    let pdfToExtract = null;
+    let pagesToExtract = [];
+    let pdfToOrganize = null;
+    let pageOrder = [];
+    let selectedPagesForSwap = [];
+    let pdfToCompress = null;
+    let pdfToInclude = null;
+    let includedPages = [];
+    let pdfToRotate = null;
+    let rotatedPages = {};
+    let pdfToConvert = null;
+
+    addMoreBtn.addEventListener('click', selectMergeFiles);
+    addPDFBtn.addEventListener('click', selectSplitFile);
+    addPDFToRemoveBtn.addEventListener('click', selectPDFToModify);
+    addPDFToExtractBtn.addEventListener('click', selectPDFToExtract);
+    addPDFToOrganizeBtn.addEventListener('click', selectPDFToOrganize);
+    addPDFToCompressBtn.addEventListener('click', selectPDFToCompress);
+    addPDFToIncludeBtn.addEventListener('click', selectPDFToInclude);
+    addPDFToRotateBtn.addEventListener('click', selectPDFToRotate);
+    addPDFToConvertBtn.addEventListener('click', selectPDFToConvert);
+
+    const rotateAllBtn = document.getElementById('rotateAll');
+
+    rotateAllBtn.addEventListener('click', () => {
+      const thumbnails = document.querySelectorAll('#rotateThumbnailContainer .page-thumbnail');
+      thumbnails.forEach(thumbnail => {
+        const canvas = thumbnail.querySelector('canvas');
+        const pageNum = parseInt(thumbnail.querySelector('.page-number').textContent.replace('Page ', ''));
+        rotatePage(pageNum, canvas);
+      });
+    });
+
+    startMergeBtn.addEventListener('click', async () => {
+      if (uploadedFiles.length < 2) {
+        alert('Please add at least 2 PDF files to merge.');
+        return;
+      }
+
+      try {
+        const mergedPdf = await PDFLib.PDFDocument.create();
+        for (const file of uploadedFiles) {
+          const pdfBytes = await file.arrayBuffer();
+          const pdf = await PDFLib.PDFDocument.load(pdfBytes);
+          const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+          pages.forEach(page => mergedPdf.addPage(page));
+        }
+
+        const mergedPdfBytes = await mergedPdf.save();
+        download(mergedPdfBytes, 'merged_document.pdf', 'application/pdf');
+        
+        alert('PDFs merged successfully! The download will start soon.');
+      } catch (error) {
+        console.error('Error merging PDFs:', error);
+        alert('An error occurred while merging PDFs. Please try again.');
+      }
+    });
+
+    function handleMergeFiles(files) {
+      ([...files]).forEach(uploadMergeFile);
+    }
+
+    function uploadMergeFile(file) {
+      if (file.type === 'application/pdf') {
+        uploadedFiles.push(file);
+        updateFileList();
+        console.log('File uploaded:', file.name);
+      } else {
+        alert('Please select only PDF files.');
+      }
+    }
+
+    function updateFileList() {
+      uploadedFilesList.innerHTML = '';
+      uploadedFiles.forEach((file, index) => {
+        const li = document.createElement('li');
+        li.textContent = file.name;
+        uploadedFilesList.appendChild(li);
+      });
+      startMergeBtn.disabled = uploadedFiles.length < 2;
+    }
+
+    function handleSplitFile(files) {
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        splitFile = files[0];
+        updateSplitFileList();
+        startSplitBtn.disabled = false;
+      } else {
+        alert('Please select a PDF file.');
+      }
+    }
+
+    function updateSplitFileList() {
+      uploadedFileElement.innerHTML = '';
+      if (splitFile) {
+        const li = document.createElement('li');
+        li.textContent = splitFile.name;
+        uploadedFileElement.appendChild(li);
+      }
+    }
+
+    function addSplitRange() {
+      const fromPage = prompt('Enter the starting page number:');
+      const toPage = prompt('Enter the ending page number:');
+      if (fromPage && toPage) {
+        splitRanges.push({ from: parseInt(fromPage), to: parseInt(toPage) });
+        updateSplitRangesList();
+      }
+    }
+
+    function updateSplitRangesList() {
+      splitRangesList.innerHTML = '';
+      splitRanges.forEach((range, index) => {
+        const li = document.createElement('li');
+        li.textContent = `Range ${index + 1}: From page ${range.from} to page ${range.to}`;
+        splitRangesList.appendChild(li);
+      });
+    }
+
+    const addRangeBtn = document.getElementById('addRange');
+    addRangeBtn.addEventListener('click', addSplitRange);
+
+    startSplitBtn.addEventListener('click', async () => {
+      if (!splitFile) {
+        alert('Please add a PDF file first.');
+        return;
+      }
+
+      if (splitRanges.length === 0) {
+        alert('Please add at least one range to split.');
+        return;
+      }
+
+      try {
+        const pdfBytes = await splitFile.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+        
+        for (let i = 0; i < splitRanges.length; i++) {
+          const range = splitRanges[i];
+          const newPdf = await PDFLib.PDFDocument.create();
+          const pageIndexes = Array.from(
+            { length: range.to - range.from + 1 },
+            (_, i) => range.from - 1 + i
+          );
+          
+          const pages = await newPdf.copyPages(pdfDoc, pageIndexes);
+          pages.forEach(page => newPdf.addPage(page));
+          
+          const newPdfBytes = await newPdf.save();
+          download(newPdfBytes, `split_${range.from}-${range.to}.pdf`, 'application/pdf');
+        }
+        
+        alert('PDF split successfully! The downloads will start soon.');
+      } catch (error) {
+        console.error('Error splitting PDF:', error);
+        alert('An error occurred while splitting the PDF. Please try again.');
+      }
+    });
+
+    function selectPDFToCompress() {
+      let input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf';
+      input.onchange = (e) => handlePDFToCompress(e.target.files);
+      input.click();
+    }
+
+    async function handlePDFToCompress(files) {
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        pdfToCompress = files[0];
+        updateCompressFileList();
+        addPDFToCompressBtn.disabled = true;
+        extremeCompressBtn.disabled = false;
+      } else {
+        alert('Please select a PDF file.');
+      }
+    }
+
+    function updateCompressFileList() {
+      pdfToCompressList.innerHTML = '';
+      if (pdfToCompress) {
+        const li = document.createElement('li');
+        li.textContent = pdfToCompress.name;
+        pdfToCompressList.appendChild(li);
+      }
+    }
+
+    extremeCompressBtn.addEventListener('click', () => compressPDF(70));
+
+    async function compressPDF(compressionLevel) {
+      if (!pdfToCompress) {
+        alert('Please add a PDF file first.');
+        return;
+      }
+
+      try {
+        const arrayBuffer = await pdfToCompress.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        
+        const newPdf = await PDFLib.PDFDocument.create();
+        const pages = await newPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+        pages.forEach(page => newPdf.addPage(page));
+        
+        const pdfBytes = await newPdf.save({
+          useObjectStreams: true,
+          compression: {
+            useDeflate: true,
+            quality: 1 - (compressionLevel / 100)
+          }
+        });
+
+        download(pdfBytes, `compressed_${compressionLevel}pct_${pdfToCompress.name}`, "application/pdf");
+        
+        alert('PDF compressed successfully! The download will start soon.');
+      } catch (error) {
+        console.error('Error compressing PDF:', error);
+        alert('An error occurred while compressing the PDF. Please try again.');
+      }
+    }
+
+    startRemovingBtn.addEventListener('click', async () => {
+      if (!pdfToModify) {
+        alert('Please add a PDF file.');
+        return;
+      }
+
+      if (pagesToRemove.length === 0) {
+        alert('Please select pages to remove.');
+        return;
+      }
+
+      try {
+        const pdfBytes = await pdfToModify.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+        const totalPages = pdfDoc.getPageCount();
+        
+        const pagesToKeep = Array.from(
+          { length: totalPages },
+          (_, i) => i
+        ).filter(pageNum => !pagesToRemove.includes(pageNum + 1));
+        
+        const newPdf = await PDFLib.PDFDocument.create();
+        const copiedPages = await newPdf.copyPages(pdfDoc, pagesToKeep);
+        copiedPages.forEach(page => newPdf.addPage(page));
+
+        const newPdfBytes = await newPdf.save();
+        download(newPdfBytes, 'modified_document.pdf', 'application/pdf');
+        
+        alert('Pages removed successfully! The download will start soon.');
+      } catch (error) {
+        console.error('Error removing pages:', error);
+        alert('An error occurred while removing pages. Please try again.');
+      }
+    });
+
+    startExtractingBtn.addEventListener('click', async () => {
+      if (!pdfToExtract) {
+        alert('Please add a PDF file.');
+        return;
+      }
+
+      if (pagesToExtract.length === 0) {
+        alert('Please select pages to extract.');
+        return;
+      }
+
+      try {
+        const pdfBytes = await pdfToExtract.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+        
+        const newPdf = await PDFLib.PDFDocument.create();
+        const pageIndexes = pagesToExtract.map(pageNum => pageNum - 1);
+        const copiedPages = await newPdf.copyPages(pdfDoc, pageIndexes);
+        copiedPages.forEach(page => newPdf.addPage(page));
+
+        const newPdfBytes = await newPdf.save();
+        download(newPdfBytes, 'extracted_pages.pdf', 'application/pdf');
+        
+        alert('Pages extracted successfully! The download will start soon.');
+      } catch (error) {
+        console.error('Error extracting pages:', error);
+        alert('An error occurred while extracting pages. Please try again.');
+      }
+    });
+
+    startOrganizingBtn.addEventListener('click', async () => {
+      if (!pdfToOrganize) {
+        alert('Please add a PDF file.');
+        return;
+      }
+
+      try {
+        const pdfBytes = await pdfToOrganize.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+        
+        const newPdf = await PDFLib.PDFDocument.create();
+        const copiedPages = await newPdf.copyPages(pdfDoc, pageOrder.map(p => p - 1));
+        copiedPages.forEach(page => newPdf.addPage(page));
+
+        const newPdfBytes = await newPdf.save();
+        download(newPdfBytes, 'organized_document.pdf', 'application/pdf');
+        
+        alert('PDF reorganized successfully! The download will start soon.');
+      } catch (error) {
+        console.error('Error organizing PDF:', error);
+        alert('An error occurred while organizing the PDF. Please try again.');
+      }
+    });
+
+    function selectMergeFiles() {
+      let input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf';
+      input.multiple = true;
+      input.onchange = (e) => handleMergeFiles(e.target.files);
+      input.click();
+    }
+
+    function selectSplitFile() {
+      let input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf';
+      input.onchange = (e) => handleSplitFile(e.target.files);
+      input.click();
+    }
+
+    function selectPDFToModify() {
+      let input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf';
+      input.onchange = (e) => handlePDFToModify(e.target.files);
+      input.click();
+    }
+
+    function selectPDFToExtract() {
+      let input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf';
+      input.onchange = (e) => handlePDFToExtract(e.target.files);
+      input.click();
+    }
+    
+    function selectPDFToOrganize() {
+      let input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf';
+      input.onchange = (e) => handlePDFToOrganize(e.target.files);
+      input.click();
+    }
+
+    function selectPDFToInclude() {
+      let input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf';
+      input.onchange = (e) => handlePDFToInclude(e.target.files);
+      input.click();
+    }
+
+    function selectPDFToRotate() {
+      let input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf';
+      input.onchange = (e) => handlePDFToRotate(e.target.files);
+      input.click();
+    }
+
+    function selectPDFToConvert() {
+      let input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf';
+      input.onchange = (e) => handlePDFToConvert(e.target.files);
+      input.click();
+    }
+
+    async function handlePDFToModify(files) {
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        pdfToModify = files[0];
+        updateRemoveFileList();
+        addPDFToRemoveBtn.disabled = true;
+        startRemovingBtn.disabled = false;
+        
+        const thumbnailContainer = document.getElementById('thumbnailContainer');
+        thumbnailContainer.innerHTML = '';
+        
+        try {
+          const arrayBuffer = await files[0].arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+          
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const scale = 0.3;
+            const viewport = page.getViewport({scale});
+            
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'page-thumbnail';
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'thumbnail-canvas';
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            const renderContext = {
+              canvasContext: context,
+              viewport: viewport
+            };
+            
+            await page.render(renderContext).promise;
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'page-checkbox';
+            checkbox.dataset.pageNum = pageNum;
+            checkbox.addEventListener('change', (e) => {
+              if (e.target.checked) {
+                if (!pagesToRemove.includes(pageNum)) {
+                  pagesToRemove.push(pageNum);
+                }
+              } else {
+                pagesToRemove = pagesToRemove.filter(p => p !== pageNum);
+              }
+              updateRemovePagesList();
+            });
+            
+            const pageLabel = document.createElement('div');
+            pageLabel.className = 'page-number';
+            pageLabel.textContent = `Page ${pageNum}`;
+            
+            pageDiv.appendChild(canvas);
+            pageDiv.appendChild(checkbox);
+            pageDiv.appendChild(pageLabel);
+            thumbnailContainer.appendChild(pageDiv);
+          }
+        } catch (error) {
+          console.error('Error loading PDF:', error);
+          alert('Error loading PDF preview');
+        }
+      } else {
+        alert('Please select a PDF file.');
+      }
+    }
+
+    async function handlePDFToExtract(files) {
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        pdfToExtract = files[0];
+        updateExtractFileList();
+        addPDFToExtractBtn.disabled = true;
+        startExtractingBtn.disabled = false;
+        
+        const thumbnailContainer = document.getElementById('extractThumbnailContainer');
+        thumbnailContainer.innerHTML = '';
+        
+        try {
+          const arrayBuffer = await files[0].arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+          
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const scale = 0.3;
+            const viewport = page.getViewport({scale});
+            
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'page-thumbnail';
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'thumbnail-canvas';
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            const renderContext = {
+              canvasContext: context,
+              viewport: viewport
+            };
+            
+            await page.render(renderContext).promise;
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'page-checkbox';
+            checkbox.dataset.pageNum = pageNum;
+            checkbox.addEventListener('change', (e) => {
+              if (e.target.checked) {
+                if (!pagesToExtract.includes(pageNum)) {
+                  pagesToExtract.push(pageNum);
+                }
+              } else {
+                pagesToExtract = pagesToExtract.filter(p => p !== pageNum);
+              }
+              updateExtractPagesList();
+            });
+            
+            const pageLabel = document.createElement('div');
+            pageLabel.className = 'page-number';
+            pageLabel.textContent = `Page ${pageNum}`;
+            
+            pageDiv.appendChild(canvas);
+            pageDiv.appendChild(checkbox);
+            pageDiv.appendChild(pageLabel);
+            thumbnailContainer.appendChild(pageDiv);
+          }
+        } catch (error) {
+          console.error('Error loading PDF:', error);
+          alert('Error loading PDF preview');
+        }
+      } else {
+        alert('Please select a PDF file.');
+      }
+    }
+
+    async function handlePDFToOrganize(files) {
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        pdfToOrganize = files[0];
+        selectedPagesForSwap = [];
+        updateOrganizeFileList();
+        addPDFToOrganizeBtn.disabled = true;
+        startOrganizingBtn.disabled = false;
+        changePagePositionBtn.disabled = true;
+        
+        const thumbnailContainer = document.getElementById('organizeThumbnailContainer');
+        thumbnailContainer.innerHTML = '';
+        thumbnailContainer.classList.add('organize-mode');
+        
+        try {
+          const arrayBuffer = await files[0].arrayBuffer();
+          const loadingTask = pdfjsLib.getDocument({data: arrayBuffer});
+          const pdf = await loadingTask.promise;
+
+          pageOrder = Array.from({length: pdf.numPages}, (_, i) => i + 1);
+          
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const scale = 0.3;
+            const viewport = page.getViewport({scale});
+            
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'page-thumbnail draggable';
+            pageDiv.draggable = true;
+            pageDiv.dataset.pageNum = pageNum;
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'thumbnail-canvas';
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            const renderContext = {
+              canvasContext: context,
+              viewport: viewport
+            };
+            
+            await page.render(renderContext).promise;
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'page-checkbox';
+            checkbox.dataset.pageNum = pageNum;
+            checkbox.addEventListener('change', handleOrganizePageSelection);
+            
+            const pageLabel = document.createElement('div');
+            pageLabel.className = 'page-number';
+            pageLabel.textContent = `Page ${pageNum}`;
+            
+            pageDiv.appendChild(canvas);
+            pageDiv.appendChild(checkbox);
+            pageDiv.appendChild(pageLabel);
+            
+            pageDiv.addEventListener('dragstart', handleDragStart);
+            pageDiv.addEventListener('dragend', handleDragEnd);
+            pageDiv.addEventListener('dragover', handleDragOver);
+            pageDiv.addEventListener('drop', handleDrop);
+            
+            thumbnailContainer.appendChild(pageDiv);
+          }
+        } catch (error) {
+          console.error('Error loading PDF:', error);
+          alert('Error loading PDF preview: ' + error.message);
+        }
+      } else {
+        alert('Please select a PDF file.');
+      }
+    }
+
+    function handleOrganizePageSelection(e) {
+      const pageNum = parseInt(e.target.dataset.pageNum);
+      
+      if (e.target.checked) {
+        selectedPagesForSwap.push(pageNum);
+      } else {
+        selectedPagesForSwap = selectedPagesForSwap.filter(p => p !== pageNum);
+      }
+      
+      const changePageBtn = document.getElementById('changePagePosition');
+      const checkboxes = document.querySelectorAll('#organizeThumbnailContainer .page-checkbox');
+      
+      if (selectedPagesForSwap.length === 2) {
+        changePageBtn.disabled = false;
+        checkboxes.forEach(cb => {
+          if (!selectedPagesForSwap.includes(parseInt(cb.dataset.pageNum))) {
+            cb.style.display = 'none';
+          }
+        });
+      } else if (selectedPagesForSwap.length < 2) {
+        changePageBtn.disabled = true;
+        checkboxes.forEach(cb => {
+          cb.style.display = 'block';
+        });
+      }
+    }
+
+    changePagePositionBtn.addEventListener('click', () => {
+      if (selectedPagesForSwap.length === 2) {
+        const index1 = pageOrder.indexOf(selectedPagesForSwap[0]);
+        const index2 = pageOrder.indexOf(selectedPagesForSwap[1]);
+        
+        const temp = pageOrder[index1];
+        pageOrder[index1] = pageOrder[index2];
+        pageOrder[index2] = temp;
+        
+        const thumbnailContainer = document.getElementById('organizeThumbnailContainer');
+        const thumbnails = Array.from(thumbnailContainer.children);
+        thumbnailContainer.innerHTML = '';
+        pageOrder.forEach(pageNum => {
+          const thumbnail = thumbnails.find(t => parseInt(t.dataset.pageNum) === pageNum);
+          if (thumbnail) {
+            const checkbox = thumbnail.querySelector('.page-checkbox');
+            checkbox.checked = false;
+            checkbox.style.display = 'block';
+            thumbnailContainer.appendChild(thumbnail);
+          }
+        });
+        
+        selectedPagesForSwap = [];
+        changePagePositionBtn.disabled = true;
+      }
+    });
+
+    function updateRemoveFileList() {
+      pdfToModifyList.innerHTML = '';
+      if (pdfToModify) {
+        const li = document.createElement('li');
+        li.textContent = pdfToModify.name;
+        pdfToModifyList.appendChild(li);
+      }
+    }
+
+    function updateExtractFileList() {
+      pdfToExtractList.innerHTML = '';
+      if (pdfToExtract) {
+        const li = document.createElement('li');
+        li.textContent = pdfToExtract.name;
+        pdfToExtractList.appendChild(li);
+      }
+    }
+
+    function updateOrganizeFileList() {
+      pdfToOrganizeList.innerHTML = '';
+      if (pdfToOrganize) {
+        const li = document.createElement('li');
+        li.textContent = pdfToOrganize.name;
+        pdfToOrganizeList.appendChild(li);
+      }
+    }
+
+    function updateCompressFileList() {
+      pdfToCompressList.innerHTML = '';
+      if (pdfToCompress) {
+        const li = document.createElement('li');
+        li.textContent = pdfToCompress.name;
+        pdfToCompressList.appendChild(li);
+      }
+    }
+
+    function updateIncludeFileList() {
+      pdfToIncludeList.innerHTML = '';
+      if (pdfToInclude) {
+        const li = document.createElement('li');
+        li.textContent = pdfToInclude.name;
+        pdfToIncludeList.appendChild(li);
+      }
+    }
+
+    function updateRotateFileList() {
+      pdfToRotateList.innerHTML = '';
+      if (pdfToRotate) {
+        const li = document.createElement('li');
+        li.textContent = pdfToRotate.name;
+        pdfToRotateList.appendChild(li);
+      }
+    }
+
+    function updateRemovePagesList() {
+      removedPagesList.innerHTML = '';
+      pagesToRemove.forEach((page, index) => {
+        const li = document.createElement('li');
+        li.textContent = `Page ${page}`;
+        removedPagesList.appendChild(li);
+      });
+    }
+
+    function updateExtractPagesList() {
+      extractPagesList.innerHTML = '';
+      pagesToExtract.sort((a,b) => a - b).forEach((page) => {
+        const li = document.createElement('li');
+        li.textContent = `Page ${page}`;
+        extractPagesList.appendChild(li);
+      });
+    }
+
+    function handleDragStart(e) {
+      e.target.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', e.target.dataset.pageNum);
+    }
+
+    function handleDragEnd(e) {
+      e.target.classList.remove('dragging');
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      const sourcePageNum = parseInt(e.dataTransfer.getData('text/plain'));
+      const targetPageNum = parseInt(e.target.closest('.page-thumbnail').dataset.pageNum);
+      
+      if (sourcePageNum && targetPageNum && sourcePageNum !== targetPageNum) {
+        const sourceIndex = pageOrder.indexOf(sourcePageNum);
+        const targetIndex = pageOrder.indexOf(targetPageNum);
+        
+        const [removed] = pageOrder.splice(sourceIndex, 1);
+        pageOrder.splice(targetIndex, 0, removed);
+        
+        const thumbnailContainer = document.getElementById('organizeThumbnailContainer');
+        const thumbnails = Array.from(thumbnailContainer.children);
+        thumbnailContainer.innerHTML = '';
+        pageOrder.forEach(pageNum => {
+          const thumbnail = thumbnails.find(t => parseInt(t.dataset.pageNum) === pageNum);
+          if (thumbnail) {
+            thumbnailContainer.appendChild(thumbnail);
+          }
+        });
+      }
+    }
+
+    async function handlePDFToInclude(files) {
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        pdfToInclude = files[0];
+        updateIncludeFileList();
+        addPDFToIncludeBtn.disabled = true;
+        startIncludingBtn.disabled = false;
+        
+        const thumbnailContainer = document.getElementById('includeThumbnailContainer');
+        thumbnailContainer.innerHTML = '';
+        
+        try {
+          const arrayBuffer = await files[0].arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+          
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const scale = 0.3;
+            const viewport = page.getViewport({scale});
+            
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'page-thumbnail';
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'thumbnail-canvas';
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            const renderContext = {
+              canvasContext: context,
+              viewport: viewport
+            };
+            
+            await page.render(renderContext).promise;
+            
+            const rotateButton = document.createElement('button');
+            rotateButton.className = 'button rotate-button';
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-sync';
+            rotateButton.appendChild(icon);
+            rotateButton.onclick = () => selectPDFToInsert(pageNum);
+            
+            const pageLabel = document.createElement('div');
+            pageLabel.className = 'page-number';
+            pageLabel.textContent = `Page ${pageNum}`;
+            
+            pageDiv.appendChild(canvas);
+            pageDiv.appendChild(rotateButton);
+            pageDiv.appendChild(pageLabel);
+            thumbnailContainer.appendChild(pageDiv);
+          }
+        } catch (error) {
+          console.error('Error loading PDF:', error);
+          alert('Error loading PDF preview');
+        }
+      } else {
+        alert('Please select a PDF file.');
+      }
+    }
+
+    async function handlePDFToRotate(files) {
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        pdfToRotate = files[0];
+        updateRotateFileList();
+        addPDFToRotateBtn.disabled = true;
+        startRotatingBtn.disabled = false;
+        
+        const thumbnailContainer = document.getElementById('rotateThumbnailContainer');
+        thumbnailContainer.innerHTML = '';
+        
+        try {
+          const arrayBuffer = await files[0].arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+          
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const scale = 0.3;
+            const viewport = page.getViewport({scale});
+            
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'page-thumbnail';
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'thumbnail-canvas';
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            
+            const renderContext = {
+              canvasContext: context,
+              viewport: viewport
+            };
+            
+            await page.render(renderContext).promise;
+            
+            const rotateButton = document.createElement('button');
+            rotateButton.className = 'button rotate-button';
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-sync';
+            rotateButton.appendChild(icon);
+            rotateButton.onclick = () => rotatePage(pageNum, canvas);
+            
+            const pageLabel = document.createElement('div');
+            pageLabel.className = 'page-number';
+            pageLabel.textContent = `Page ${pageNum}`;
+            
+            pageDiv.appendChild(canvas);
+            pageDiv.appendChild(rotateButton);
+            pageDiv.appendChild(pageLabel);
+            thumbnailContainer.appendChild(pageDiv);
+          }
+        } catch (error) {
+          console.error('Error loading PDF:', error);
+          alert('Error loading PDF preview');
+        }
+      } else {
+        alert('Please select a PDF file.');
+      }
+    }
+
+    function rotatePage(pageNum, canvas) {
+      rotatedPages[pageNum] = (rotatedPages[pageNum] || 0) + 90;
+      if (rotatedPages[pageNum] >= 360) rotatedPages[pageNum] = 0;
+      
+      canvas.style.transition = 'transform 0.3s';
+      canvas.style.transform = `rotate(${rotatedPages[pageNum]}deg)`;
+    }
+
+    startRotatingBtn.addEventListener('click', async () => {
+      if (!pdfToRotate) {
+        alert('Please add a PDF file.');
+        return;
+      }
+
+      try {
+        const pdfBytes = await pdfToRotate.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+        
+        Object.entries(rotatedPages).forEach(([pageNum, rotation]) => {
+          const page = pdfDoc.getPage(parseInt(pageNum) - 1);
+          page.setRotation(PDFLib.degrees(rotation));
+        });
+
+        const newPdfBytes = await pdfDoc.save();
+        download(newPdfBytes, 'rotated_document.pdf', 'application/pdf');
+        
+        alert('PDF rotated successfully! The download will start soon.');
+      } catch (error) {
+        console.error('Error rotating PDF:', error);
+        alert('An error occurred while rotating the PDF. Please try again.');
+      }
+    });
+
+    startIncludingBtn.addEventListener('click', async () => {
+      if (!pdfToInclude) {
+        alert('Please add a PDF file.');
+        return;
+      }
+
+      try {
+        const arrayBuffer = await pdfToInclude.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        const newPdfBytes = await pdfDoc.save();
+        
+        download(newPdfBytes, 'included_pages.pdf', 'application/pdf');
+        alert('PDF saved successfully! The download will start soon.');
+      } catch (error) {
+        console.error('Error saving PDF:', error);
+        alert('An error occurred while saving the PDF. Please try again.');
+      }
+    });
+
+    async function handlePDFToConvert(files) {
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        pdfToConvert = files[0];
+        updateConvertFileList();
+        addPDFToConvertBtn.disabled = true;
+        startConvertingBtn.disabled = false;
+      } else {
+        alert('Please select a PDF file.');
+      }
+    }
+
+    function updateConvertFileList() {
+      const list = document.getElementById('pdfToConvert');
+      list.innerHTML = '';
+      if (pdfToConvert) {
+        const li = document.createElement('li');
+        li.textContent = pdfToConvert.name;
+        list.appendChild(li);
+      }
+    }
+
+    startConvertingBtn.addEventListener('click', async () => {
+      if (!pdfToConvert) {
+        alert('Please add a PDF file first.');
+        return;
+      }
+
+      try {
+        const arrayBuffer = await pdfToConvert.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+        let text = '';
+        
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          text += textContent.items.map(item => item.str).join(' ') + '\n\n';
+        }
+        
+        document.getElementById('convertedText').textContent = text;
+        
+        const blob = new Blob([text], {type: 'text/plain'});
+        download(blob, 'converted_text.txt', 'text/plain');
+        
+        alert('Text conversion complete! The text file will download automatically.');
+        
+      } catch (error) {
+        console.error('Error converting PDF:', error);
+        alert('An error occurred while converting the PDF. Please try again.');
+      }
+    });
+  </script>
+
+</body></html>
